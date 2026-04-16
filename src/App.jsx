@@ -42,7 +42,7 @@ const FB = "-apple-system,'Helvetica Neue',sans-serif";
 // Google review URL (Place ID: ChIJ0cniXfClUQ0RIxI6MlDNK8Y)
 const GOOGLE_REVIEW_URL = "https://search.google.com/local/writereview?placeid=ChIJ0cniXfClUQ0RIxI6MlDNK8Y";
 // Apps Script — sustituir por tu URL real
-const SHEET_URL = "https://script.google.com/macros/s/AKfycbz0DuN5jrQvVKPqyQaFt0nc5bujp6SZcjSftVxsj08eUVdYeQpPzSo6_s6O-xUq54D07A/exec";
+const SHEET_URL = "https://script.google.com/macros/s/AKfycbzYgCAx5PXM1AV0bOABfq_9RVpagJocJCumVJ2k6L7OSDSprc30nr5nWJpCgbmmMomRYw/exec";
 const GET_URL = SHEET_URL;
 
 // ── SVG Icon System — Squircle 3D ceramic-lacquer ─────────────────────────────
@@ -80,6 +80,25 @@ function IconPlate({ size=32 }) {
       <ellipse cx="16" cy="17" rx="13" ry="12" fill="url(#plateShine)"/>
       <ellipse cx="16" cy="17" rx="9" ry="8" fill="none" stroke="rgba(255,255,255,.18)" strokeWidth="1"/>
       <ellipse cx="12" cy="13" rx="3" ry="2" fill="rgba(255,255,255,.25)"/>
+    </svg>
+  );
+}
+
+function IconDessert({ size=32 }) {
+  return (
+    <svg width={size} height={size} viewBox="0 0 32 32" fill="none">
+      <defs>
+        <linearGradient id="dessG" x1="20%" y1="0%" x2="80%" y2="100%">
+          <stop offset="0%" stopColor="#4060D0"/>
+          <stop offset="100%" stopColor="#152060"/>
+        </linearGradient>
+      </defs>
+      <path d="M8 20 C8 20 8 28 16 28 C24 28 24 20 24 20 Z" fill="url(#dessG)"/>
+      <rect x="14" y="20" width="4" height="5" fill="url(#dessG)"/>
+      <ellipse cx="16" cy="20" rx="8" ry="3" fill="#2D52C8"/>
+      <path d="M12 8 C12 4 20 4 20 8 C20 12 22 14 22 17 C22 19 18 20 16 20 C14 20 10 19 10 17 C10 14 12 12 12 8Z" fill="url(#dessG)"/>
+      <ellipse cx="13" cy="10" rx="2" ry="1.5" fill="rgba(255,255,255,.25)" transform="rotate(-20 13 10)"/>
+      <circle cx="19" cy="14" r="1.5" fill="#E8C84A" opacity=".8"/>
     </svg>
   );
 }
@@ -208,7 +227,7 @@ function IconCheck({ size=36 }) {
 // ── Prize data ────────────────────────────────────────────────────────────────
 const PREMIOS_DIRECTOS = [
   { id:"pincho",   Icon:()=><IconPlate size={28}/>, title:"x1 Pincho gratis",      desc:"1,90€ · Lun–Jue · Mín. 15€",        prob:.40, days:21, sorteo:2 },
-  { id:"postre",   Icon:()=><IconPlate size={28}/>, title:"x1 Postre de la casa",   desc:"Válido mediodía · Mín. 2 personas",  prob:.28, days:30, sorteo:1 },
+  { id:"postre",   Icon:()=><IconDessert size={28}/>, title:"x1 Postre de la casa",   desc:"Válido mediodía · Mín. 2 personas",  prob:.28, days:30, sorteo:1 },
   { id:"txakoli",  Icon:()=><IconStar size={26}/>,  title:"x1 Copa de txakoli",     desc:"De bienvenida · Próxima reserva",    prob:.20, days:30, sorteo:1 },
   { id:"desc",     Icon:()=><IconGift size={26}/>,  title:"10% próxima visita",     desc:"Lun–Jue · Mín. 25€ · 21 días",      prob:.12, days:21, sorteo:1 },
 ];
