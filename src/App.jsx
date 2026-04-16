@@ -323,7 +323,7 @@ function Dots({ step }) {
 // ════════════════════════════════════════════════════════════════════════════
 // STEP 1 — Prize catalogue
 // ════════════════════════════════════════════════════════════════════════════
-function Step1({ lang, premios=PREMIOS_DIRECTOS, onNext }) {
+function Step1({ lang, premios=PREMIOS_DIRECTOS, sorteos=SORTEOS, onNext }) {
   const [tab, setTab] = useState("directos");
   const es = lang==="es";
   return (
@@ -371,7 +371,7 @@ function Step1({ lang, premios=PREMIOS_DIRECTOS, onNext }) {
               <span style={{fontFamily:FB,fontSize:"10px",fontWeight:"700",color:B.navy}}>×{p.sorteo}</span>
             </div>
           </div>
-        )) : SORTEOS.map(s=>(
+        )) : sorteos.map(s=>(
           <div key={s.id} style={{background:B.card,borderRadius:"14px",padding:"13px 16px",boxShadow:B.shadow,display:"flex",alignItems:"center",gap:"12px"}}>
             <Squircle size={46}><s.Icon/></Squircle>
             <div style={{flex:1}}>
@@ -719,9 +719,12 @@ function Step4({ lang, name, prize, code, email, stars, setStars, feedback, setF
 // ════════════════════════════════════════════════════════════════════════════
 // PREMIOS EDITOR — panel visual para gestionar premios sin tocar código
 // ════════════════════════════════════════════════════════════════════════════
-function PremiosEditor({ premios, setPremios, onClose }) {
+function PremiosEditor({ premios, setPremios, sorteos=SORTEOS, setSorteos, onClose }) {
   const [editIdx, setEditIdx] = useState(null);
   const [draft, setDraft] = useState(null);
+  const [editorTab, setEditorTab] = useState("directos");
+  const [editSorteoIdx, setEditSorteoIdx] = useState(null);
+  const [sortDraft, setSortDraft] = useState(null);
 
   function startEdit(i) {
     setEditIdx(i);
@@ -748,13 +751,29 @@ function PremiosEditor({ premios, setPremios, onClose }) {
       <div style={{maxWidth:"430px",margin:"0 auto",padding:"24px 20px 80px"}}>
 
         {/* Header */}
-        <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:"24px"}}>
+        <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:"20px"}}>
           <div>
             <div style={{fontFamily:FD,fontSize:"20px",fontWeight:700,color:B.navy}}>Gestión de Premios</div>
             <div style={{fontSize:"11px",color:B.faint,marginTop:"2px"}}>Toca un premio para editarlo</div>
           </div>
           <button onClick={onClose} style={{background:B.card,border:`1px solid ${B.border}`,color:B.mid,fontSize:"18px",width:"40px",height:"40px",borderRadius:"50%",cursor:"pointer",boxShadow:B.shadow}}>✕</button>
         </div>
+
+        {/* Tab switcher */}
+        {editIdx === null && (
+          <div style={{display:"flex",background:B.bgWarm,borderRadius:"12px",padding:"3px",marginBottom:"16px"}}>
+            {[["directos","Premios Directos"],["sorteos","Sorteos"]].map(([k,l])=>(
+              <button key={k} onClick={()=>setEditorTab(k)} style={{
+                flex:1,padding:"9px 4px",borderRadius:"9px",fontFamily:FB,fontSize:"12px",
+                fontWeight:editorTab===k?"700":"500",
+                background:editorTab===k?B.card:"transparent",
+                color:editorTab===k?B.navy:B.mid,
+                border:"none",cursor:"pointer",
+                boxShadow:editorTab===k?B.shadow:"none",transition:"all .2s",
+              }}>{l}</button>
+            ))}
+          </div>
+        )}
 
         {/* Prize list */}
         {editIdx === null ? (
@@ -797,6 +816,53 @@ function PremiosEditor({ premios, setPremios, onClose }) {
                 </div>
               </div>
             )}
+          </div>
+        ) : editorTab === "sorteos" && editSorteoIdx === null ? (
+          /* Sorteos list */
+          <div style={{display:"flex",flexDirection:"column",gap:"10px",marginBottom:"20px"}}>
+            {sorteos.map((s,i) => (
+              <div key={s.id} onClick={()=>{setEditSorteoIdx(i);setSortDraft({...s});}} style={{
+                background:B.card,borderRadius:"16px",padding:"16px",
+                boxShadow:B.shadow,border:`1px solid ${B.border}`,
+                cursor:"pointer",display:"flex",gap:"12px",alignItems:"center",
+              }}>
+                <Squircle size={46}><s.Icon/></Squircle>
+                <div style={{flex:1}}>
+                  <div style={{fontFamily:FB,fontSize:"13px",fontWeight:"700",color:B.navy,marginBottom:"3px"}}>{s.title}</div>
+                  <div style={{fontFamily:FB,fontSize:"11px",color:B.mid}}>{s.desc}</div>
+                </div>
+                <div style={{fontSize:"18px",color:B.faint}}>›</div>
+              </div>
+            ))}
+          </div>
+        ) : editorTab === "sorteos" && editSorteoIdx !== null ? (
+          /* Sorteo edit form */
+          <div style={{display:"flex",flexDirection:"column",gap:"12px"}}>
+            <div style={{background:B.card,borderRadius:"16px",overflow:"hidden",boxShadow:B.shadow}}>
+              <div style={{padding:"14px 16px 0",borderBottom:`1px solid ${B.border}`}}>
+                <div style={{fontFamily:FB,fontSize:"9px",color:B.faint,letterSpacing:".12em",marginBottom:"6px"}}>NOMBRE DEL SORTEO</div>
+                <input value={sortDraft?.title||""} onChange={e=>setSortDraft({...sortDraft,title:e.target.value})}
+                  style={{width:"100%",padding:"0 0 12px",border:"none",background:"transparent",fontFamily:FD,fontSize:"18px",color:B.navy,outline:"none",boxSizing:"border-box"}}/>
+              </div>
+              <div style={{padding:"14px 16px 14px"}}>
+                <div style={{fontFamily:FB,fontSize:"9px",color:B.faint,letterSpacing:".12em",marginBottom:"6px"}}>DESCRIPCIÓN (fecha sorteo, valor premio...)</div>
+                <input value={sortDraft?.desc||""} onChange={e=>setSortDraft({...sortDraft,desc:e.target.value})}
+                  style={{width:"100%",padding:0,border:"none",background:"transparent",fontFamily:FB,fontSize:"14px",color:B.text,outline:"none",boxSizing:"border-box"}}/>
+              </div>
+            </div>
+            <div style={{background:B.bluePale,borderRadius:"14px",padding:"14px 16px"}}>
+              <div style={{fontFamily:FB,fontSize:"10px",color:B.blue,fontWeight:"700",marginBottom:"8px"}}>VISTA PREVIA</div>
+              <div style={{fontFamily:FD,fontSize:"18px",color:B.navy,marginBottom:"3px"}}>{sortDraft?.title}</div>
+              <div style={{fontFamily:FB,fontSize:"12px",color:B.mid}}>{sortDraft?.desc}</div>
+            </div>
+            <div style={{display:"flex",gap:"8px"}}>
+              <button onClick={()=>{setEditSorteoIdx(null);setSortDraft(null);}} style={{flex:1,padding:"14px",borderRadius:"13px",background:B.border,border:"none",color:B.mid,fontSize:"14px",fontWeight:"600",fontFamily:FB,cursor:"pointer"}}>
+                Cancelar
+              </button>
+              <button onClick={()=>{const u=[...sorteos];u[editSorteoIdx]=sortDraft;setSorteos(u);setEditSorteoIdx(null);setSortDraft(null);}} style={{flex:2,padding:"14px",borderRadius:"13px",background:B.blue,border:"none",color:"#fff",fontSize:"14px",fontWeight:"600",fontFamily:FB,cursor:"pointer"}}>
+                Guardar sorteo ✓
+              </button>
+            </div>
           </div>
         ) : (
           /* Edit form */
@@ -1045,19 +1111,20 @@ export default function App() {
   const [showPin,setShowPin]=useState(false);
   const [showPremiosEditor,setShowPremiosEditor]=useState(false);
   const [premiosDirectos,setPremiosDirectos]=useState(PREMIOS_DIRECTOS);
+  const [sorteos,setSorteos]=useState(SORTEOS);
   const participaciones=4;
 
   function reset(){setStep(1);setPrize(null);setName("");setEmail("");setStars(0);setFeedback("");setReviewDone(false);}
 
   return (
     <div style={{background:B.bg,minHeight:"100vh",maxWidth:"430px",margin:"0 auto",position:"relative"}}>
-      {showPremiosEditor&&<PremiosEditor premios={premiosDirectos} setPremios={setPremiosDirectos} onClose={()=>setShowPremiosEditor(false)}/>}
+      {showPremiosEditor&&<PremiosEditor premios={premiosDirectos} setPremios={setPremiosDirectos} sorteos={sorteos} setSorteos={setSorteos} onClose={()=>setShowPremiosEditor(false)}/>}
       {showPin&&<AdminPin onSuccess={()=>{setShowPin(false);setAdmin(true);}} onCancel={()=>setShowPin(false)}/> }
       {admin&&<Admin onClose={()=>setAdmin(false)} onOpenPremios={()=>{setAdmin(false);setShowPremiosEditor(true);}}/>}
       <Header onReset={reset} lang={lang} setLang={setLang}/>
       <Dots step={step}/>
       <div style={{paddingBottom:"80px"}}>
-        {step===1&&<Step1 lang={lang} premios={premiosDirectos} onNext={()=>setStep(2)}/>}
+        {step===1&&<Step1 lang={lang} premios={premiosDirectos} sorteos={sorteos} onNext={()=>setStep(2)}/>}
         {step===2&&<Step2 lang={lang} prize={prize} setPrize={setPrize} premios={premiosDirectos} participaciones={participaciones} onNext={()=>setStep(3)}/>}
         {step===3&&<Step3 lang={lang} prize={prize} code={code} name={name} setName={setName} email={email} setEmail={setEmail} onNext={()=>setStep(4)}/>}
         {step===4&&<Step4 lang={lang} name={name} prize={prize} code={code} email={email} stars={stars} setStars={setStars} feedback={feedback} setFeedback={setFeedback} done={reviewDone} setDone={setReviewDone}/>}
