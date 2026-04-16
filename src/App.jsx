@@ -217,10 +217,10 @@ const SORTEOS = [
   { id:"cesta", Icon:()=><IconLeaf size={24}/>,  title:"Cesta gourmet vasca",       desc:"Valor 60€ · Sorteo mensual" },
 ];
 
-function pickPrize() {
+function pickPrize(pool=PREMIOS_DIRECTOS) {
   let r = Math.random(), acc = 0;
-  for (const p of PREMIOS_DIRECTOS) { acc += p.prob; if (r < acc) return p; }
-  return PREMIOS_DIRECTOS[PREMIOS_DIRECTOS.length - 1];
+  for (const p of pool) { acc += p.prob; if (r < acc) return p; }
+  return pool[pool.length - 1];
 }
 function mkCode() { return Math.random().toString(36).toUpperCase().slice(2, 8); }
 function expDate(days) {
@@ -323,7 +323,7 @@ function Dots({ step }) {
 // ════════════════════════════════════════════════════════════════════════════
 // STEP 1 — Prize catalogue
 // ════════════════════════════════════════════════════════════════════════════
-function Step1({ lang, onNext }) {
+function Step1({ lang, premios=PREMIOS_DIRECTOS, onNext }) {
   const [tab, setTab] = useState("directos");
   const es = lang==="es";
   return (
@@ -359,7 +359,7 @@ function Step1({ lang, onNext }) {
 
       {/* List */}
       <div style={{display:"flex",flexDirection:"column",gap:"8px",marginBottom:"24px"}}>
-        {tab==="directos" ? PREMIOS_DIRECTOS.map(p=>(
+        {tab==="directos" ? premios.map(p=>(
           <div key={p.id} style={{background:B.card,borderRadius:"14px",padding:"13px 16px",boxShadow:B.shadow,display:"flex",alignItems:"center",gap:"12px"}}>
             <Squircle size={46}><p.Icon/></Squircle>
             <div style={{flex:1}}>
@@ -391,7 +391,7 @@ function Step1({ lang, onNext }) {
 // ════════════════════════════════════════════════════════════════════════════
 // STEP 2 — Scratch
 // ════════════════════════════════════════════════════════════════════════════
-function Step2({ lang, prize, setPrize, participaciones, onNext }) {
+function Step2({ lang, prize, setPrize, premios=PREMIOS_DIRECTOS, participaciones, onNext }) {
   const cvs=useRef(null), drawing=useRef(false);
   const [revealed,setRevealed]=useState(false);
   const [fading,setFading]=useState(false);
@@ -400,7 +400,7 @@ function Step2({ lang, prize, setPrize, participaciones, onNext }) {
   const es=lang==="es";
 
   useEffect(()=>{
-    setPrize(pickPrize());
+    setPrize(pickPrize(premios));
     const c=cvs.current; if(!c) return;
     const ctx=c.getContext("2d");
     const g=ctx.createLinearGradient(0,0,c.width,c.height);
@@ -715,6 +715,154 @@ function Step4({ lang, name, prize, code, email, stars, setStars, feedback, setF
 }
 
 
+
+// ════════════════════════════════════════════════════════════════════════════
+// PREMIOS EDITOR — panel visual para gestionar premios sin tocar código
+// ════════════════════════════════════════════════════════════════════════════
+function PremiosEditor({ premios, setPremios, onClose }) {
+  const [editIdx, setEditIdx] = useState(null);
+  const [draft, setDraft] = useState(null);
+
+  function startEdit(i) {
+    setEditIdx(i);
+    setDraft({...premios[i]});
+  }
+
+  function saveEdit() {
+    const updated = [...premios];
+    updated[editIdx] = draft;
+    setPremios(updated);
+    setEditIdx(null);
+    setDraft(null);
+  }
+
+  function cancelEdit() {
+    setEditIdx(null);
+    setDraft(null);
+  }
+
+  const totalProb = premios.reduce((s,p) => s + p.prob, 0);
+
+  return (
+    <div style={{position:"fixed",inset:0,background:B.bg,zIndex:500,overflowY:"auto",fontFamily:FB}}>
+      <div style={{maxWidth:"430px",margin:"0 auto",padding:"24px 20px 80px"}}>
+
+        {/* Header */}
+        <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:"24px"}}>
+          <div>
+            <div style={{fontFamily:FD,fontSize:"20px",fontWeight:700,color:B.navy}}>Gestión de Premios</div>
+            <div style={{fontSize:"11px",color:B.faint,marginTop:"2px"}}>Toca un premio para editarlo</div>
+          </div>
+          <button onClick={onClose} style={{background:B.card,border:`1px solid ${B.border}`,color:B.mid,fontSize:"18px",width:"40px",height:"40px",borderRadius:"50%",cursor:"pointer",boxShadow:B.shadow}}>✕</button>
+        </div>
+
+        {/* Prize list */}
+        {editIdx === null ? (
+          <div style={{display:"flex",flexDirection:"column",gap:"10px",marginBottom:"20px"}}>
+            {premios.map((p,i) => (
+              <div key={p.id} onClick={() => startEdit(i)} style={{
+                background:B.card,borderRadius:"16px",padding:"16px",
+                boxShadow:B.shadow,border:`1px solid ${B.border}`,
+                cursor:"pointer",display:"flex",gap:"12px",alignItems:"center",
+                transition:"all .15s",
+              }}>
+                <Squircle size={46}><p.Icon/></Squircle>
+                <div style={{flex:1}}>
+                  <div style={{fontFamily:FB,fontSize:"13px",fontWeight:"700",color:B.navy,marginBottom:"3px"}}>{p.title}</div>
+                  <div style={{fontFamily:FB,fontSize:"11px",color:B.mid,marginBottom:"4px"}}>{p.desc}</div>
+                  <div style={{display:"flex",alignItems:"center",gap:"6px"}}>
+                    <div style={{height:"4px",width:"80px",background:B.border,borderRadius:"2px"}}>
+                      <div style={{width:`${p.prob*100}%`,height:"100%",background:B.blue,borderRadius:"2px"}}/>
+                    </div>
+                    <span style={{fontSize:"11px",color:B.blue,fontWeight:"600"}}>{Math.round(p.prob*100)}%</span>
+                  </div>
+                </div>
+                <div style={{fontSize:"18px",color:B.faint}}>›</div>
+              </div>
+            ))}
+
+            {/* Prob warning */}
+            {Math.abs(totalProb - 1) > 0.01 && (
+              <div style={{background:"#FDF0F0",borderRadius:"12px",padding:"12px 16px",border:"1px solid #F0C0C0"}}>
+                <div style={{fontFamily:FB,fontSize:"12px",color:"#C04040",fontWeight:"600"}}>
+                  ⚠️ Las probabilidades suman {Math.round(totalProb*100)}% — deben sumar 100%
+                </div>
+              </div>
+            )}
+
+            {Math.abs(totalProb - 1) <= 0.01 && (
+              <div style={{background:B.mintPale,borderRadius:"12px",padding:"12px 16px"}}>
+                <div style={{fontFamily:FB,fontSize:"12px",color:B.green,fontWeight:"600"}}>
+                  ✓ Probabilidades correctas — suman 100%
+                </div>
+              </div>
+            )}
+          </div>
+        ) : (
+          /* Edit form */
+          <div style={{display:"flex",flexDirection:"column",gap:"12px"}}>
+            <div style={{background:B.card,borderRadius:"16px",overflow:"hidden",boxShadow:B.shadow}}>
+              {/* Premio title */}
+              <div style={{padding:"14px 16px 0",borderBottom:`1px solid ${B.border}`}}>
+                <div style={{fontFamily:FB,fontSize:"9px",color:B.faint,letterSpacing:".12em",marginBottom:"6px"}}>NOMBRE DEL PREMIO</div>
+                <input value={draft.title} onChange={e=>setDraft({...draft,title:e.target.value})}
+                  style={{width:"100%",padding:"0 0 12px",border:"none",background:"transparent",fontFamily:FD,fontSize:"18px",color:B.navy,outline:"none",boxSizing:"border-box",fontWeight:400}}/>
+              </div>
+              {/* Descripción corta */}
+              <div style={{padding:"14px 16px 0",borderBottom:`1px solid ${B.border}`}}>
+                <div style={{fontFamily:FB,fontSize:"9px",color:B.faint,letterSpacing:".12em",marginBottom:"6px"}}>DESCRIPCIÓN CORTA (aparece en la tarjeta)</div>
+                <input value={draft.desc} onChange={e=>setDraft({...draft,desc:e.target.value})}
+                  style={{width:"100%",padding:"0 0 12px",border:"none",background:"transparent",fontFamily:FB,fontSize:"14px",color:B.text,outline:"none",boxSizing:"border-box"}}/>
+              </div>
+              {/* Condiciones */}
+              <div style={{padding:"14px 16px 0",borderBottom:`1px solid ${B.border}`}}>
+                <div style={{fontFamily:FB,fontSize:"9px",color:B.faint,letterSpacing:".12em",marginBottom:"6px"}}>CONDICIONES DE CANJE</div>
+                <input value={draft.cond||draft.desc} onChange={e=>setDraft({...draft,cond:e.target.value})}
+                  style={{width:"100%",padding:"0 0 12px",border:"none",background:"transparent",fontFamily:FB,fontSize:"14px",color:B.text,outline:"none",boxSizing:"border-box"}}/>
+              </div>
+              {/* Días validez */}
+              <div style={{padding:"14px 16px 0",borderBottom:`1px solid ${B.border}`}}>
+                <div style={{fontFamily:FB,fontSize:"9px",color:B.faint,letterSpacing:".12em",marginBottom:"6px"}}>DÍAS DE VALIDEZ</div>
+                <input type="number" value={draft.days} onChange={e=>setDraft({...draft,days:parseInt(e.target.value)||21})}
+                  style={{width:"100%",padding:"0 0 12px",border:"none",background:"transparent",fontFamily:FB,fontSize:"14px",color:B.text,outline:"none",boxSizing:"border-box"}}/>
+              </div>
+              {/* Probabilidad */}
+              <div style={{padding:"14px 16px 14px"}}>
+                <div style={{fontFamily:FB,fontSize:"9px",color:B.faint,letterSpacing:".12em",marginBottom:"10px"}}>
+                  PROBABILIDAD DE SALIR: <span style={{color:B.blue,fontWeight:"700"}}>{Math.round(draft.prob*100)}%</span>
+                </div>
+                <input type="range" min="5" max="70" value={Math.round(draft.prob*100)}
+                  onChange={e=>setDraft({...draft,prob:parseInt(e.target.value)/100})}
+                  style={{width:"100%",accentColor:B.blue}}/>
+                <div style={{display:"flex",justifyContent:"space-between",fontFamily:FB,fontSize:"10px",color:B.faint,marginTop:"4px"}}>
+                  <span>5% (raro)</span><span>70% (frecuente)</span>
+                </div>
+              </div>
+            </div>
+
+            {/* Preview */}
+            <div style={{background:B.bluePale,borderRadius:"14px",padding:"14px 16px",border:`1px solid ${B.blue}20`}}>
+              <div style={{fontFamily:FB,fontSize:"10px",color:B.blue,fontWeight:"700",marginBottom:"8px",letterSpacing:".08em"}}>VISTA PREVIA</div>
+              <div style={{fontFamily:FD,fontSize:"18px",color:B.navy,marginBottom:"3px"}}>{draft.title}</div>
+              <div style={{fontFamily:FB,fontSize:"12px",color:B.mid,marginBottom:"6px"}}>{draft.desc}</div>
+              <div style={{fontFamily:FB,fontSize:"11px",color:B.faint}}>Válido {draft.days} días · {draft.cond||draft.desc}</div>
+            </div>
+
+            <div style={{display:"flex",gap:"8px"}}>
+              <button onClick={cancelEdit} style={{flex:1,padding:"14px",borderRadius:"13px",background:B.border,border:"none",color:B.mid,fontSize:"14px",fontWeight:"600",fontFamily:FB,cursor:"pointer"}}>
+                Cancelar
+              </button>
+              <button onClick={saveEdit} style={{flex:2,padding:"14px",borderRadius:"13px",background:B.blue,border:"none",color:"#fff",fontSize:"14px",fontWeight:"600",fontFamily:FB,cursor:"pointer",boxShadow:`0 4px 14px ${B.blue}40`}}>
+                Guardar premio ✓
+              </button>
+            </div>
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}
+
 // ════════════════════════════════════════════════════════════════════════════
 // ADMIN PIN — protección con contraseña 2607
 // ════════════════════════════════════════════════════════════════════════════
@@ -770,7 +918,7 @@ function AdminPin({ onSuccess, onCancel }) {
 // ════════════════════════════════════════════════════════════════════════════
 // ADMIN — cream/blue POLKA tones
 // ════════════════════════════════════════════════════════════════════════════
-function Admin({ onClose }) {
+function Admin({ onClose, onOpenPremios }) {
   const bars=[{d:"L",v:38},{d:"M",v:29},{d:"X",v:31},{d:"J",v:45},{d:"V",v:72},{d:"S",v:67},{d:"D",v:30}];
   const maxB=Math.max(...bars.map(b=>b.v));
   const prizes=[
@@ -871,7 +1019,10 @@ function Admin({ onClose }) {
           ))}
         </div>
 
-        <Btn label="← Volver al flujo cliente" onClick={onClose} variant="ghost"/>
+        <div style={{display:"flex",flexDirection:"column",gap:"10px"}}>
+          <Btn label="🎁 Gestionar premios" onClick={onOpenPremios} variant="primary"/>
+          <Btn label="← Volver al flujo cliente" onClick={onClose} variant="ghost"/>
+        </div>
       </div>
     </div>
   );
@@ -892,19 +1043,22 @@ export default function App() {
   const [reviewDone,setReviewDone]=useState(false);
   const [admin,setAdmin]=useState(false);
   const [showPin,setShowPin]=useState(false);
+  const [showPremiosEditor,setShowPremiosEditor]=useState(false);
+  const [premiosDirectos,setPremiosDirectos]=useState(PREMIOS_DIRECTOS);
   const participaciones=4;
 
   function reset(){setStep(1);setPrize(null);setName("");setEmail("");setStars(0);setFeedback("");setReviewDone(false);}
 
   return (
     <div style={{background:B.bg,minHeight:"100vh",maxWidth:"430px",margin:"0 auto",position:"relative"}}>
+      {showPremiosEditor&&<PremiosEditor premios={premiosDirectos} setPremios={setPremiosDirectos} onClose={()=>setShowPremiosEditor(false)}/>}
       {showPin&&<AdminPin onSuccess={()=>{setShowPin(false);setAdmin(true);}} onCancel={()=>setShowPin(false)}/> }
-      {admin&&<Admin onClose={()=>setAdmin(false)}/>}
+      {admin&&<Admin onClose={()=>setAdmin(false)} onOpenPremios={()=>{setAdmin(false);setShowPremiosEditor(true);}}/>}
       <Header onReset={reset} lang={lang} setLang={setLang}/>
       <Dots step={step}/>
       <div style={{paddingBottom:"80px"}}>
-        {step===1&&<Step1 lang={lang} onNext={()=>setStep(2)}/>}
-        {step===2&&<Step2 lang={lang} prize={prize} setPrize={setPrize} participaciones={participaciones} onNext={()=>setStep(3)}/>}
+        {step===1&&<Step1 lang={lang} premios={premiosDirectos} onNext={()=>setStep(2)}/>}
+        {step===2&&<Step2 lang={lang} prize={prize} setPrize={setPrize} premios={premiosDirectos} participaciones={participaciones} onNext={()=>setStep(3)}/>}
         {step===3&&<Step3 lang={lang} prize={prize} code={code} name={name} setName={setName} email={email} setEmail={setEmail} onNext={()=>setStep(4)}/>}
         {step===4&&<Step4 lang={lang} name={name} prize={prize} code={code} email={email} stars={stars} setStars={setStars} feedback={feedback} setFeedback={setFeedback} done={reviewDone} setDone={setReviewDone}/>}
       </div>
