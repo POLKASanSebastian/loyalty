@@ -630,7 +630,7 @@ function Step4({ lang, name, prize, code, email, stars, setStars, feedback, setF
           </div>
         </div>
         <div style={{fontFamily:FB,fontSize:"14px",fontWeight:"700",color:B.blue,letterSpacing:".06em",marginBottom:"6px"}}>#POLKADONOSTIA</div>
-        <div style={{fontFamily:FB,fontSize:"12px",color:B.faint}}>Fermín Calbetón, 4 · Parte Vieja · Donostia</div>
+        <div style={{fontFamily:FB,fontSize:"12px",color:B.faint}}>Plaza Sarriegi, 8 · Donostia</div>
       </div>
     );
   }
