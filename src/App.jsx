@@ -42,7 +42,7 @@ const FB = "-apple-system,'Helvetica Neue',sans-serif";
 // Google review URL (Place ID: ChIJ0cniXfClUQ0RIxI6MlDNK8Y)
 const GOOGLE_REVIEW_URL = "https://search.google.com/local/writereview?placeid=ChIJ0cniXfClUQ0RIxI6MlDNK8Y";
 // Apps Script — sustituir por tu URL real
-const SHEET_URL = "https://script.google.com/macros/s/AKfycbzHbZ6CMOEQgex8JzfWICO-JJ6ywl13UjwV8J7rBiVbfMyj07VK9npXfn-JPYoUmNEqgA/exec";
+const SHEET_URL = "https://script.google.com/macros/s/AKfycbyR5xS9XJNwVNnz6lEWaLDcLq3BDnFipfawFkeChMO-a8qC0KoPPbYh6EH7B3Ly_EU94w/exec";
 
 // ── SVG Icon System — Squircle 3D ceramic-lacquer ─────────────────────────────
 // Shared squircle container
@@ -1099,6 +1099,21 @@ function Admin({ onClose, onOpenPremios }) {
 // ════════════════════════════════════════════════════════════════════════════
 export default function App() {
   const [step,setStep]=useState(1);
+  const [codeValid, setCodeValid]=useState(null); // null=checking, true=ok, false=invalid
+  const [codeChecked, setCodeChecked]=useState(false);
+  const urlCode = new URLSearchParams(window.location.search).get("code");
+
+  useEffect(() => {
+    if (!urlCode) { setCodeValid(true); setCodeChecked(true); return; }
+    // Verify code with Apps Script
+    fetch(SHEET_URL, {
+      method:"POST",
+      body: JSON.stringify({action:"verify", code: urlCode}),
+    })
+    .then(r => r.json())
+    .then(d => { setCodeValid(d.valid); setCodeChecked(true); })
+    .catch(() => { setCodeValid(true); setCodeChecked(true); }); // fail open
+  }, []);
   const [lang,setLang]=useState("es");
   const [prize,setPrize]=useState(null);
   const [code]=useState(mkCode());
@@ -1115,6 +1130,34 @@ export default function App() {
   const participaciones=4;
 
   function reset(){setStep(1);setPrize(null);setName("");setEmail("");setStars(0);setFeedback("");setReviewDone(false);}
+
+  // Loading screen
+  if (!codeChecked) return (
+    <div style={{background:B.bg,minHeight:"100vh",maxWidth:"430px",margin:"0 auto",display:"flex",alignItems:"center",justifyContent:"center",flexDirection:"column",gap:"16px"}}>
+      <div style={{fontFamily:FD,fontSize:"22px",color:B.navy,letterSpacing:".08em"}}>PÓLKA</div>
+      <div style={{fontFamily:FB,fontSize:"13px",color:B.faint}}>Verificando tu ticket...</div>
+      <div style={{width:"40px",height:"3px",background:B.border,borderRadius:"2px",overflow:"hidden"}}>
+        <div style={{width:"40px",height:"100%",background:B.blue,borderRadius:"2px",animation:"slide 1s ease infinite"}}/>
+      </div>
+      <style>{`@keyframes slide{0%{transform:translateX(-100%)}100%{transform:translateX(100%)}}`}</style>
+    </div>
+  );
+
+  // Invalid/used code screen
+  if (codeChecked && !codeValid && urlCode) return (
+    <div style={{background:B.bg,minHeight:"100vh",maxWidth:"430px",margin:"0 auto",display:"flex",alignItems:"center",justifyContent:"center",padding:"40px 24px"}}>
+      <div style={{textAlign:"center"}}>
+        <div style={{width:"72px",height:"72px",borderRadius:"50%",background:"#FEE8E8",display:"flex",alignItems:"center",justifyContent:"center",margin:"0 auto 20px",fontSize:"32px"}}>✕</div>
+        <h2 style={{fontFamily:FD,fontSize:"22px",color:B.navy,margin:"0 0 10px"}}>Este premio ya fue canjeado</h2>
+        <p style={{fontFamily:FB,fontSize:"14px",color:B.mid,lineHeight:1.5,margin:"0 0 8px"}}>
+          El código de este ticket ya ha sido utilizado.
+        </p>
+        <p style={{fontFamily:FB,fontSize:"12px",color:B.faint}}>
+          Código: {urlCode}
+        </p>
+      </div>
+    </div>
+  );
 
   return (
     <div style={{background:B.bg,minHeight:"100vh",maxWidth:"430px",margin:"0 auto",position:"relative"}}>
