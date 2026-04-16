@@ -42,7 +42,7 @@ const FB = "-apple-system,'Helvetica Neue',sans-serif";
 // Google review URL (Place ID: ChIJ0cniXfClUQ0RIxI6MlDNK8Y)
 const GOOGLE_REVIEW_URL = "https://search.google.com/local/writereview?placeid=ChIJ0cniXfClUQ0RIxI6MlDNK8Y";
 // Apps Script — sustituir por tu URL real
-const SHEET_URL = "https://script.google.com/macros/s/AKfycbyR5xS9XJNwVNnz6lEWaLDcLq3BDnFipfawFkeChMO-a8qC0KoPPbYh6EH7B3Ly_EU94w/exec";
+const SHEET_URL = "https://script.google.com/macros/s/AKfycbzD1jtCADL3glRrNwW0Qad6mxOnq8Nyf31AvVtlVIu6d6rRc1zts-frr7v-nk16MH0Idw/exec";
 
 // ── SVG Icon System — Squircle 3D ceramic-lacquer ─────────────────────────────
 // Shared squircle container
@@ -586,6 +586,7 @@ function Step4({ lang, name, prize, code, email, stars, setStars, feedback, setF
         body:JSON.stringify({
           nombre:name, email, premio:prize?.title,
           codigo:code, estrellas:stars, feedback, lang,
+          days: prize?.days || 21,
         }),
       });
     } catch(e){ console.log("Sheet error",e); }
@@ -602,6 +603,7 @@ function Step4({ lang, name, prize, code, email, stars, setStars, feedback, setF
         body:JSON.stringify({
           nombre:name, email, premio:prize?.title,
           codigo:code, estrellas:stars, feedback, lang,
+          days: prize?.days || 21,
         }),
       });
     } catch(e){ console.log("Sheet error",e); }
