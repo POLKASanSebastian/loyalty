@@ -714,6 +714,59 @@ function Step4({ lang, name, prize, code, email, stars, setStars, feedback, setF
   );
 }
 
+
+// ════════════════════════════════════════════════════════════════════════════
+// ADMIN PIN — protección con contraseña 2607
+// ════════════════════════════════════════════════════════════════════════════
+const ADMIN_PIN = "2607";
+
+function AdminPin({ onSuccess, onCancel }) {
+  const [pin, setPin] = useState("");
+  const [error, setError] = useState(false);
+  const [shake, setShake] = useState(false);
+
+  function handleKey(k) {
+    if (k === "del") { setPin(p => p.slice(0,-1)); setError(false); return; }
+    if (pin.length >= 4) return;
+    const next = pin + k;
+    setPin(next);
+    if (next.length === 4) {
+      if (next === ADMIN_PIN) {
+        setTimeout(() => onSuccess(), 200);
+      } else {
+        setShake(true); setError(true);
+        setTimeout(() => { setPin(""); setShake(false); }, 600);
+      }
+    }
+  }
+
+  const keys = ["1","2","3","4","5","6","7","8","9","","0","del"];
+
+  return (
+    <div style={{position:"fixed",inset:0,background:"rgba(14,20,40,.88)",backdropFilter:"blur(8px)",zIndex:400,display:"flex",alignItems:"center",justifyContent:"center"}}>
+      <div style={{background:B.card,borderRadius:"24px",padding:"32px 28px",width:"300px",textAlign:"center",boxShadow:B.shadowLg}}>
+        <div style={{fontFamily:FD,fontSize:"20px",color:B.navy,marginBottom:"6px",fontWeight:700}}>PÓLKA Admin</div>
+        <div style={{fontFamily:FB,fontSize:"12px",color:B.faint,marginBottom:"28px"}}>Introduce el PIN de acceso</div>
+        <div style={{display:"flex",gap:"12px",justifyContent:"center",marginBottom:"28px",animation:shake?"shake .5s ease":"none"}}>
+          {[0,1,2,3].map(i=>(
+            <div key={i} style={{width:"14px",height:"14px",borderRadius:"50%",background:i<pin.length?(error?"#E84040":B.blue):B.border,transition:"background .15s"}}/>
+          ))}
+        </div>
+        <div style={{display:"grid",gridTemplateColumns:"1fr 1fr 1fr",gap:"10px",marginBottom:"20px"}}>
+          {keys.map((k,i)=>(
+            k===""?<div key={i}/>:
+            <button key={i} onClick={()=>handleKey(k)} style={{padding:"16px 8px",borderRadius:"12px",background:k==="del"?B.bgWarm:B.bluePale,border:"none",color:k==="del"?B.mid:B.navy,fontSize:k==="del"?"16px":"20px",fontWeight:"600",fontFamily:FB,cursor:"pointer"}}>
+              {k==="del"?"⌫":k}
+            </button>
+          ))}
+        </div>
+        <button onClick={onCancel} style={{background:"none",border:"none",fontFamily:FB,fontSize:"12px",color:B.faint,cursor:"pointer",textDecoration:"underline"}}>Cancelar</button>
+      </div>
+      <style>{`@keyframes shake{0%,100%{transform:translateX(0)}20%{transform:translateX(-8px)}40%{transform:translateX(8px)}60%{transform:translateX(-6px)}80%{transform:translateX(6px)}}`}</style>
+    </div>
+  );
+}
+
 // ════════════════════════════════════════════════════════════════════════════
 // ADMIN — cream/blue POLKA tones
 // ════════════════════════════════════════════════════════════════════════════
@@ -844,6 +897,7 @@ export default function App() {
 
   return (
     <div style={{background:B.bg,minHeight:"100vh",maxWidth:"430px",margin:"0 auto",position:"relative"}}>
+      {showPin&&<AdminPin onSuccess={()=>{setShowPin(false);setAdmin(true);}} onCancel={()=>setShowPin(false)}/> }
       {admin&&<Admin onClose={()=>setAdmin(false)}/>}
       <Header onReset={reset} lang={lang} setLang={setLang}/>
       <Dots step={step}/>
@@ -856,7 +910,7 @@ export default function App() {
       {/* Footer */}
       <div style={{position:"fixed",bottom:0,left:"50%",transform:"translateX(-50%)",width:"100%",maxWidth:"430px",background:"rgba(244,242,237,.94)",backdropFilter:"blur(14px)",borderTop:`1px solid ${B.border}`,padding:"10px 20px 18px",display:"flex",justifyContent:"space-between",alignItems:"center"}}>
         <span style={{fontFamily:FB,fontSize:"10px",color:B.faint}}>PÓLKA © 2026</span>
-        <button onClick={()=>setAdmin(true)} style={{background:"none",border:"none",fontFamily:FB,fontSize:"10px",color:B.faint,cursor:"pointer"}}>Admin ↗</button>
+        <button onClick={()=>setShowPin(true)} style={{background:"none",border:"none",fontFamily:FB,fontSize:"10px",color:B.faint,cursor:"pointer"}}>Admin ↗</button>
       </div>
     </div>
   );
