@@ -891,6 +891,7 @@ export default function App() {
   const [feedback,setFeedback]=useState("");
   const [reviewDone,setReviewDone]=useState(false);
   const [admin,setAdmin]=useState(false);
+  const [showPin,setShowPin]=useState(false);
   const participaciones=4;
 
   function reset(){setStep(1);setPrize(null);setName("");setEmail("");setStars(0);setFeedback("");setReviewDone(false);}
