@@ -42,7 +42,8 @@ const FB = "-apple-system,'Helvetica Neue',sans-serif";
 // Google review URL (Place ID: ChIJ0cniXfClUQ0RIxI6MlDNK8Y)
 const GOOGLE_REVIEW_URL = "https://search.google.com/local/writereview?placeid=ChIJ0cniXfClUQ0RIxI6MlDNK8Y";
 // Apps Script — sustituir por tu URL real
-const SHEET_URL = "https://script.google.com/macros/s/AKfycbzD1jtCADL3glRrNwW0Qad6mxOnq8Nyf31AvVtlVIu6d6rRc1zts-frr7v-nk16MH0Idw/exec";
+const SHEET_URL = "https://script.google.com/macros/s/AKfycbz0DuN5jrQvVKPqyQaFt0nc5bujp6SZcjSftVxsj08eUVdYeQpPzSo6_s6O-xUq54D07A/exec";
+const GET_URL = SHEET_URL;
 
 // ── SVG Icon System — Squircle 3D ceramic-lacquer ─────────────────────────────
 // Shared squircle container
@@ -1101,20 +1102,52 @@ function Admin({ onClose, onOpenPremios }) {
 // ════════════════════════════════════════════════════════════════════════════
 export default function App() {
   const [step,setStep]=useState(1);
-  const [codeValid, setCodeValid]=useState(null); // null=checking, true=ok, false=invalid
+  const [codeValid, setCodeValid]=useState(null);
   const [codeChecked, setCodeChecked]=useState(false);
   const urlCode = new URLSearchParams(window.location.search).get("code");
+  const [premiosDirectos,setPremiosDirectosRaw]=useState(PREMIOS_DIRECTOS);
+  const [sorteos,setSorteosRaw]=useState(SORTEOS);
+  const [showPremiosEditor,setShowPremiosEditor]=useState(false);
+
+  // Save premios to Sheets when changed
+  function setPremiosDirectos(p) {
+    setPremiosDirectosRaw(p);
+    fetch(SHEET_URL, {method:"POST", body:JSON.stringify({action:"savePremios", premios:p.map(x=>({...x,Icon:undefined})), sorteos:sorteos.map(x=>({...x,Icon:undefined}))})}).catch(()=>{});
+  }
+  function setSorteos(s) {
+    setSorteosRaw(s);
+    fetch(SHEET_URL, {method:"POST", body:JSON.stringify({action:"savePremios", premios:premiosDirectos.map(x=>({...x,Icon:undefined})), sorteos:s.map(x=>({...x,Icon:undefined}))})}).catch(()=>{});
+  }
 
   useEffect(() => {
+    // Load premios from Sheets
+    fetch(GET_URL + "?action=getPremios")
+      .then(r => r.json())
+      .then(d => {
+        if (d.premios && d.premios.length > 0) {
+          // Merge with icons from PREMIOS_DIRECTOS
+          const withIcons = d.premios.map((p,i) => ({
+            ...PREMIOS_DIRECTOS[i % PREMIOS_DIRECTOS.length],
+            ...p,
+          }));
+          setPremiosDirectosRaw(withIcons);
+        }
+        if (d.sorteos && d.sorteos.length > 0) {
+          const withIcons = d.sorteos.map((s,i) => ({
+            ...SORTEOS[i % SORTEOS.length],
+            ...s,
+          }));
+          setSorteosRaw(withIcons);
+        }
+      })
+      .catch(() => {});
+
+    // Verify QR code
     if (!urlCode) { setCodeValid(true); setCodeChecked(true); return; }
-    // Verify code with Apps Script
-    fetch(SHEET_URL, {
-      method:"POST",
-      body: JSON.stringify({action:"verify", code: urlCode}),
-    })
-    .then(r => r.json())
-    .then(d => { setCodeValid(d.valid); setCodeChecked(true); })
-    .catch(() => { setCodeValid(true); setCodeChecked(true); }); // fail open
+    fetch(SHEET_URL, {method:"POST", body:JSON.stringify({action:"verify", code:urlCode})})
+      .then(r => r.json())
+      .then(d => { setCodeValid(d.valid); setCodeChecked(true); })
+      .catch(() => { setCodeValid(true); setCodeChecked(true); });
   }, []);
   const [lang,setLang]=useState("es");
   const [prize,setPrize]=useState(null);
@@ -1126,9 +1159,6 @@ export default function App() {
   const [reviewDone,setReviewDone]=useState(false);
   const [admin,setAdmin]=useState(false);
   const [showPin,setShowPin]=useState(false);
-  const [showPremiosEditor,setShowPremiosEditor]=useState(false);
-  const [premiosDirectos,setPremiosDirectos]=useState(PREMIOS_DIRECTOS);
-  const [sorteos,setSorteos]=useState(SORTEOS);
   const participaciones=4;
 
   function reset(){setStep(1);setPrize(null);setName("");setEmail("");setStars(0);setFeedback("");setReviewDone(false);}
